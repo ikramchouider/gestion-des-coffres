@@ -46,6 +46,9 @@ class CoffreController extends AbstractController
         ]);
     }
 
+    /**
+     * Add new coffre
+     */
     #[Route('/{id}', name: 'app_coffre_show', methods: ['GET'])]
     public function show(Coffre $coffre): Response
     {

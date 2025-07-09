@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Entity\SecretCodeHistory;
 use App\Form\RegistrationFormType;
+use App\Service\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,6 +19,10 @@ use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 #[Route('/user')]
 class UserController extends AbstractController
 {
+    public function __construct(private UserService $userService)
+    {
+    }
+
     #[Route('/register', name: 'app_register')]
     public function register(
         Request $request,
@@ -60,16 +65,12 @@ class UserController extends AbstractController
         JWTTokenManagerInterface $JWTManager
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
-        
+
         if (!isset($data['email']) || !isset($data['password'])) {
-            return new JsonResponse(['error' => 'Email and password are required'], 400);
+            throw new Exception('Email and password are required');
         }
 
-        $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
-        
-        if (!$user || !$passwordHasher->isPasswordValid($user, $data['password'])) {
-            return new JsonResponse(['error' => 'Invalid credentials'], 401);
-        }
+        $this->userService->getUser($data['email']);
 
         $token = $JWTManager->create($user);
 
