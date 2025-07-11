@@ -15,6 +15,31 @@ class CoffreRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Coffre::class);
     }
+    public function codeExistsInCoffreOrHistory(string $code): bool
+    {
+        // Check current codes
+        $currentCodeExists = $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('c.currentSecretCode = :code')
+            ->setParameter('code', $code)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if ($currentCodeExists > 0) {
+            return true;
+        }
+
+        // Check historical codes
+        $historyCodeExists = $this->_em->createQueryBuilder()
+            ->select('COUNT(h.id)')
+            ->from('App\Entity\SecretCodeHistory', 'h')
+            ->where('h.secretCode = :code')
+            ->setParameter('code', $code)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $historyCodeExists > 0;
+    }
 
     //    /**
     //     * @return Coffre[] Returns an array of Coffre objects

@@ -2,75 +2,85 @@
 
 namespace App\Controller;
 
-use App\Entity\Coffre;
-use App\Entity\SecretCodeHistory;
-use App\Form\CoffreType;
-use App\Service\SecretCodeGenerator;
+use App\Entity\User;
+use App\Service\CoffreService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/coffre')]
+#[Route('/coffres', format: 'json')]
 class CoffreController extends AbstractController
 {
-    #[Route('/new', name: 'app_coffre_new', methods: ['GET', 'POST'])]
-    public function new(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        SecretCodeGenerator $codeGenerator
-    ): Response {
-        $coffre = new Coffre();
-        $form = $this->createForm(CoffreType::class, $coffre);
-        $form->handleRequest($request);
+    public function __construct(
+        private CoffreService $coffreService,
+        private EntityManagerInterface $entityManager
+    ) {}
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $coffre->setOwner($this->getUser());
-            $coffre->setCurrentSecretCode($codeGenerator->generateHexCode(36));
-
-            $history = new SecretCodeHistory();
-            $history->setSecretCode($coffre->getCurrentSecretCode());
-            $history->setGeneratedBy($this->getUser());
-            $coffre->addSecretCodeHistory($history);
-
-            $entityManager->persist($coffre);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_coffre_index');
-        }
-
-        return $this->render('coffre/new.html.twig', [
-            'coffre' => $coffre,
-            'form' => $form,
-        ]);
-    }
-
-    #[Route('/{id}', name: 'app_coffre_show', methods: ['GET'])]
-    public function show(Coffre $coffre): Response
+    #[Route('/create', name: 'coffre_create', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
     {
-        return $this->render('coffre/show.html.twig', [
-            'coffre' => $coffre,
+        $data = json_decode($request->getContent(), true);
+        
+        // For testing: Get the first user from database
+        $user = $this->getTestUser();
+        
+        $coffre = $this->coffreService->createCoffre($data, $user);
+
+        return $this->json([
+            'id' => $coffre->getId(),
+            'name' => $coffre->getName(),
+            'secret_code' => $coffre->getCurrentSecretCode()
+        ], Response::HTTP_CREATED);
+    }
+
+    #[Route('/{id}/regenerate-code', name: 'coffre_regenerate_code', methods: ['POST'])]
+    public function regenerateCode(int $id): JsonResponse
+    {
+        // For testing: Get the first user from database
+        $user = $this->getTestUser();
+        
+        $coffre = $this->coffreService->regenerateCode($id, $user);
+
+        return $this->json([
+            'new_secret_code' => $coffre->getCurrentSecretCode()
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'app_coffre_edit', methods: ['GET', 'POST'])]
-    public function edit(
-        Request $request,
-        Coffre $coffre,
-        EntityManagerInterface $entityManager
-    ): Response {
-        $form = $this->createForm(CoffreType::class, $coffre);
-        $form->handleRequest($request);
+    #[Route('/{id}/history', name: 'coffre_history', methods: ['GET'])]
+    public function getHistory(int $id): JsonResponse
+    {
+        $coffre = $this->coffreService->getAuthorizedCoffre($id);
+        
+        $history = array_map(function($entry) {
+            return [
+                'code' => $entry->getSecretCode(),
+                'generated_by' => $entry->getGeneratedBy()->getEmail(),
+                'generated_at' => $entry->getGeneratedAt()->format(\DateTimeInterface::ATOM)
+            ];
+        }, $coffre->getSecretCodeHistories()->toArray());
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
-            return $this->redirectToRoute('app_coffre_show', ['id' => $coffre->getId()]);
+        return $this->json($history);
+    }
+
+    /**
+     * Temporary method to get a test user while JWT isn't working
+     */
+    private function getTestUser(): User
+    {
+        $user = $this->entityManager->getRepository(User::class)->findOneBy([]);
+        
+        if (!$user) {
+            // Create a test user if none exists
+            $user = new User();
+            $user->setEmail('test@example.com');
+            $user->setPassword('testpassword');
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
         }
-
-        return $this->render('coffre/edit.html.twig', [
-            'coffre' => $coffre,
-            'form' => $form,
-        ]);
+        
+        return $user;
     }
 }

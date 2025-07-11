@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/history')]
+#[Route('/history', format: 'json')]
 class HistoryController extends AbstractController
 {
     #[Route('/search', name: 'app_history_search', methods: ['GET'])]
@@ -28,18 +28,6 @@ class HistoryController extends AbstractController
         return $this->render('history/search.html.twig', [
             'code' => $code,
             'results' => $results,
-        ]);
-    }
-
-    #[Route('/coffre/{id}', name: 'app_history_coffre', methods: ['GET'])]
-    public function coffreHistory(
-        int $id,
-        SecretCodeHistoryRepository $historyRepository
-    ): Response {
-        $histories = $historyRepository->findBy(['coffre' => $id], ['generatedAt' => 'DESC']);
-
-        return $this->render('history/coffre.html.twig', [
-            'histories' => $histories,
         ]);
     }
 }
