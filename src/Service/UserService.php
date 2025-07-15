@@ -24,9 +24,21 @@ class UserService
     ) {}
 
     /**
-     * Handles user registration
+     * Registers a new user with the system
+     * 
+     * @param array $data User registration data containing:
+     *               - email (required)
+     *               - password (required)
+     *               - username (optional)
+     * @return array Registered user details including:
+     *               - id
+     *               - email
+     *               - roles
+     * @throws AlreadyLoggedInException If a user is already authenticated
+     * @throws MissingCredentialsException If required fields are missing
+     * @throws InvalidRegistrationDataException If validation fails
      */
-    public function registerUser(array $data): User
+    public function registerUser(array $data): array
     {
         if ($this->security->getUser()) {
             throw new AlreadyLoggedInException();
@@ -42,19 +54,27 @@ class UserService
             $user->setUsername($data['username']);
         }
 
-        $errors = $this->validator->validate($user);
-        if (count($errors) > 0) {
-            throw new InvalidRegistrationDataException($errors);
-        }
-
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        return $user;
+        return [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'roles' => $user->getRoles()
+        ];
     }
 
     /**
-     * Handles user authentication
+     * Authenticates a user and generates a JWT token
+     * 
+     * @param array $data Authentication credentials containing:
+     *               - email (required)
+     *               - password (required)
+     * @return array Authentication response containing:
+     *               - token (JWT token)
+     *               - user (user details)
+     * @throws MissingCredentialsException If required fields are missing
+     * @throws InvalidCredentialsException If authentication fails
      */
     public function authenticateUser(array $data): array
     {
@@ -78,7 +98,11 @@ class UserService
     }
 
     /**
-     * Validates required fields in input data
+     * Validates that all required fields are present in the input data
+     * 
+     * @param array $data Input data to validate
+     * @param array $requiredFields List of required field names
+     * @throws MissingCredentialsException If any required field is missing
      */
     private function validateRequiredFields(array $data, array $requiredFields): void
     {

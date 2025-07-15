@@ -1,5 +1,11 @@
+
 controllers:
     resource:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+    prefix: /api
+    defaults:
+        _format: json
+api_login_check:
+    path: /api/user/login

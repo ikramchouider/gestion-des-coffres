@@ -13,6 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[UniqueEntity(fields: ['email'], message: 'Un compte existe déjà avec cet email.')]
+#[UniqueEntity(fields: ['username'], message: 'Ce nom d\'utilisateur est déjà pris.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -25,6 +26,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Email(message: "L'email {{ value }} n'est pas valide.")]
     #[Assert\Length(max: 180, maxMessage: "L'email ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $email = null;
+
+    #[ORM\Column(length: 50, unique: true)]
+    #[Assert\NotBlank(message: "Le nom d'utilisateur est obligatoire.")]
+    #[Assert\Length(
+        min: 3,
+        max: 50,
+        minMessage: "Le nom d'utilisateur doit faire au moins {{ limit }} caractères.",
+        maxMessage: "Le nom d'utilisateur ne peut pas dépasser {{ limit }} caractères."
+    )]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-Z0-9_]+$/',
+        message: "Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores."
+    )]
+    private ?string $username = null;
 
     /**
      * @var list<string> The user roles
@@ -84,6 +99,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
+    public function setUsername(string $username): static
+    {
+        $this->username = $username;
         $this->updatedAt = new \DateTimeImmutable();
 
         return $this;
@@ -192,6 +220,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return [
             'id' => $this->id,
             'email' => $this->email,
+            'username' => $this->username,
             'password' => $this->password,
             'roles' => $this->roles
         ];
@@ -201,6 +230,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->id = $data['id'];
         $this->email = $data['email'];
+        $this->username = $data['username'];
         $this->password = $data['password'];
         $this->roles = $data['roles'];
     }

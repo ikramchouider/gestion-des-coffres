@@ -4,30 +4,27 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Service\CoffreService;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/coffres', format: 'json')]
+#[Route('/coffres', name: 'app_coffre_', format: 'json')]
 class CoffreController extends AbstractController
 {
     public function __construct(
-        private CoffreService $coffreService,
-        private EntityManagerInterface $entityManager
+        private CoffreService $coffreService
     ) {}
 
-    #[Route('/create', name: 'coffre_create', methods: ['POST'])]
+    /**
+     * Creates a new coffre (safe) with the provided data
+     */
+    #[Route('/create', name: 'create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
-        // For testing: Get the first user from database
-        $user = $this->getTestUser();
-        
-        $coffre = $this->coffreService->createCoffre($data, $user);
+        $coffre = $this->coffreService->createCoffre($data);
 
         return $this->json([
             'id' => $coffre->getId(),
@@ -36,20 +33,24 @@ class CoffreController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}/regenerate-code', name: 'coffre_regenerate_code', methods: ['POST'])]
-    public function regenerateCode(int $id): JsonResponse
+    /**
+     * Regenerates a new secret code for the specified coffre
+     */
+    #[Route('/{id}/regenerate-code', name: 'regenerate_code', methods: ['POST'])]
+    public function regenerateCode(Request $request): JsonResponse
     {
-        // For testing: Get the first user from database
-        $user = $this->getTestUser();
-        
-        $coffre = $this->coffreService->regenerateCode($id, $user);
+        $data = json_decode($request->getContent(), true);
+        $coffre = $this->coffreService->regenerateCode($data);
 
         return $this->json([
             'new_secret_code' => $coffre->getCurrentSecretCode()
         ]);
     }
 
-    #[Route('/{id}/history', name: 'coffre_history', methods: ['GET'])]
+    /**
+     * Retrieves the history of secret codes for the specified coffre
+     */
+    #[Route('/{id}/history', name: 'history', methods: ['GET'])]
     public function getHistory(int $id): JsonResponse
     {
         $coffre = $this->coffreService->getAuthorizedCoffre($id);
@@ -63,24 +64,5 @@ class CoffreController extends AbstractController
         }, $coffre->getSecretCodeHistories()->toArray());
 
         return $this->json($history);
-    }
-
-    /**
-     * Temporary method to get a test user while JWT isn't working
-     */
-    private function getTestUser(): User
-    {
-        $user = $this->entityManager->getRepository(User::class)->findOneBy([]);
-        
-        if (!$user) {
-            // Create a test user if none exists
-            $user = new User();
-            $user->setEmail('test@example.com');
-            $user->setPassword('testpassword');
-            $this->entityManager->persist($user);
-            $this->entityManager->flush();
-        }
-        
-        return $user;
     }
 }
