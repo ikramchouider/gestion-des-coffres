@@ -65,4 +65,22 @@ class CoffreController extends AbstractController
 
         return $this->json($history);
     }
+
+    #[Route('/', name: 'list', methods: ['GET'])]
+    public function list(CoffreService $coffreService): JsonResponse
+    {
+        $coffres = $coffreService->getAllCoffres();
+        
+        return $this->json([
+            'coffres' => array_map(function($coffre) {
+                return [
+                    'id' => $coffre->getId(),
+                    'name' => $coffre->getName(),
+                    'current_code' => $coffre->getCurrentSecretCode(),
+                    'created_at' => $coffre->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'owner' => $coffre->getOwner()->getEmail(),
+                ];
+            }, $coffres)
+        ]);
+    }
 }

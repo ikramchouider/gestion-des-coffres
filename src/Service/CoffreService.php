@@ -47,7 +47,8 @@ class CoffreService
      */
     public function regenerateCode(array $data): Coffre
     {
-        $coffre = $this->getAuthorizedCoffre($data['coffreId']);
+        $coffreID = is_numeric($data['coffreId']) ? (int)$data['coffreId'] : $data['coffreId'];
+        $coffre = $this->getAuthorizedCoffre($coffreID);
         $user = $this->getUserByUsername($data['username']);
         
         $newCode = $this->codeGenerator->generateUniqueHexCode(36);
@@ -111,5 +112,10 @@ class CoffreService
        
         $this->entityManager->persist($history);
         $coffre->addSecretCodeHistory($history);
+    }
+
+    public function getAllCoffres(): array
+    {
+        return $this->entityManager->getRepository(Coffre::class)->findAll();
     }
 }
