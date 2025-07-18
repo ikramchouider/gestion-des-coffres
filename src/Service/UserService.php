@@ -7,6 +7,7 @@ use App\Exception\AlreadyLoggedInException;
 use App\Exception\InvalidCredentialsException;
 use App\Exception\InvalidRegistrationDataException;
 use App\Exception\MissingCredentialsException;
+use App\Exception\UserNotAuthenticatedException;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -111,5 +112,26 @@ class UserService
                 throw new MissingCredentialsException(sprintf('Missing required field: %s', $field));
             }
         }
+    }
+
+        /**
+     * Returns the currently authenticated user's information
+     * 
+     * @return array Current user details containing:
+     *               - id
+     *               - email
+     *               - username (if set)
+     *               - roles
+     * @throws UserNotAuthenticatedException If no user is currently authenticated
+     */
+    public function getCurrentUser(): array
+    {
+        $user = $this->security->getUser();
+
+        if (!$user instanceof User) {
+            throw new UserNotAuthenticatedException('No user is currently authenticated');
+        }
+
+        return $user;
     }
 }

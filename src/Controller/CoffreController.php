@@ -18,7 +18,7 @@ class CoffreController extends AbstractController
     ) {}
 
     /**
-     * Creates a new coffre (safe) with the provided data
+     * Creates a new coffre  with the provided data
      */
     #[Route('/create', name: 'create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
@@ -65,6 +65,9 @@ class CoffreController extends AbstractController
 
         return $this->json($history);
     }
+    /**
+     * Get all boxes 
+     */
 
     #[Route('/', name: 'list', methods: ['GET'])]
     public function list(CoffreService $coffreService): JsonResponse

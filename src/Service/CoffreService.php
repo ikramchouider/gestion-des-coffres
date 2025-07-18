@@ -13,20 +13,20 @@ class CoffreService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private SecretCodeGenerator $codeGenerator
+        private SecretCodeGenerator $codeGenerator,
+        private UserService $userService
     ) {}
 
     /**
-     * Creates a new coffre (safe) with a unique secret code and owner
-     * @param array $data Contains name and username of owner
+     * Creates a new coffre  with a unique secret code and owner
+     * @param array $data Contains name  of the box
      * @return Coffre The newly created coffre entity
      */
     public function createCoffre(array $data): Coffre
     {
         $coffre = new Coffre();
         $coffre->setName($data['name'] ?? 'New Coffre');
-        
-        $user = $this->getUserByUsername($data['username']);
+        $user = $this->userService->getCurrentUser();
         $coffre->setOwner($user);
         
         $uniqueCode = $this->codeGenerator->generateUniqueHexCode(36);
@@ -42,14 +42,14 @@ class CoffreService
 
     /**
      * Generates a new secret code for an existing coffre
-     * @param array $data Contains coffre ID and username of requester
+     * @param array $data Contains coffre ID 
      * @return Coffre The updated coffre entity with new code
      */
     public function regenerateCode(array $data): Coffre
     {
         $coffreID = is_numeric($data['coffreId']) ? (int)$data['coffreId'] : $data['coffreId'];
         $coffre = $this->getAuthorizedCoffre($coffreID);
-        $user = $this->getUserByUsername($data['username']);
+        $user = $this->userService->getCurrentUser();
         
         $newCode = $this->codeGenerator->generateUniqueHexCode(36);
         $coffre->setCurrentSecretCode($newCode);
@@ -61,23 +61,6 @@ class CoffreService
         return $coffre;
     }
 
-    /**
-     * Retrieves a user entity by their username/email
-     * @param string $username The user's identifier
-     * @return User The found user entity
-     * @throws UserNotFoundException If user doesn't exist
-     */
-    private function getUserByUsername(string $username): User
-    {
-        $user = $this->entityManager->getRepository(User::class)
-            ->findOneBy(['email' => $username]);
-        
-        if (!$user) {
-            throw new UserNotFoundException('User not found');
-        }
-
-        return $user;
-    }
 
     /**
      * Retrieves a coffre by ID and verifies its existence
@@ -113,7 +96,9 @@ class CoffreService
         $this->entityManager->persist($history);
         $coffre->addSecretCodeHistory($history);
     }
-
+    /**
+     * Returns all the boxes 
+     */
     public function getAllCoffres(): array
     {
         return $this->entityManager->getRepository(Coffre::class)->findAll();
