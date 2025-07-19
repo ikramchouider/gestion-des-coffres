@@ -17,10 +17,6 @@ services:
         resource: '../src/'
     # config/services.yaml
 
-    App\EventListener\CorsListener:
-        tags:
-            - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
-
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -1,19 +1,16 @@
 nelmio_cors:
     defaults:
-        origin_regex: true
-        allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173']
-        allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
-        allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With']
-        expose_headers: ['Link']
+        allow_origin: ['*'] 
+        allow_methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+        allow_headers: ['Content-Type', 'Authorization']
+        expose_headers: ['Authorization']
         max_age: 3600
+        allow_credentials: true
     paths:
-        '^/api/':
-            allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173']
-            allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With']
-            allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
+        '^/api/': # apply this config to all routes starting with /api/
+            allow_origin: ['http://localhost:5173']
+            allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'DELETE']
+            allow_headers: ['Content-Type', 'Authorization']
+            expose_headers: ['Authorization']
             max_age: 3600
-        '^/user/':
-            allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173']
-            allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With']
-            allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
-            max_age: 3600
+            allow_credentials: true

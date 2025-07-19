@@ -61,7 +61,6 @@ class UserService
         return [
             'id' => $user->getId(),
             'email' => $user->getEmail(),
-            'roles' => $user->getRoles()
         ];
     }
 
@@ -88,14 +87,14 @@ class UserService
             throw new InvalidCredentialsException();
         }
 
-        return [
-            'token' => $this->jwtManager->create($user),
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'roles' => $user->getRoles(),
-            ]
-        ];
+    return [
+        'token' => $this->jwtManager->create($user),
+        'user' => [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'username' => $user->getUsername(), 
+        ]
+    ];
     }
 
     /**
@@ -120,18 +119,18 @@ class UserService
      * @return array Current user details containing:
      *               - id
      *               - email
-     *               - username (if set)
+     *               - username 
      *               - roles
      * @throws UserNotAuthenticatedException If no user is currently authenticated
      */
-    public function getCurrentUser(): array
-    {
-        $user = $this->security->getUser();
 
-        if (!$user instanceof User) {
-            throw new UserNotAuthenticatedException('No user is currently authenticated');
-        }
-
-        return $user;
+    public function getCurrentUser(): User
+{
+    $user = $this->security->getUser();
+    if (!$user) {
+        throw new UserNotAuthenticatedException();
     }
+    
+    return $user;
+}
 }

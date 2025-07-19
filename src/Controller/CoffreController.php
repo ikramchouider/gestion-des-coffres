@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+
 #[Route('/coffres', name: 'app_coffre_', format: 'json')]
 class CoffreController extends AbstractController
 {
